@@ -2,8 +2,7 @@
 
 # Learn more: https://github.com/kennethreitz/setup.py
 
-from setuptools import setup, find_packages
-
+from setuptools import find_packages, setup
 
 with open('README.rst') as f:
     readme = f.read()
@@ -12,14 +11,13 @@ with open('LICENSE') as f:
     license = f.read()
 
 setup(
-    name='sample',
+    name='imagefix',
     version='0.1.0',
-    description='Sample package for Python-Guide.org',
+    description='Fix image taken dates',
     long_description=readme,
-    author='Kenneth Reitz',
-    author_email='me@kennethreitz.com',
-    url='https://github.com/kennethreitz/samplemod',
+    author='Marcos Peron',
+    author_email='mperon@outlook.com',
+    url='https://github.com/mperon/imagefix',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
 )
-
