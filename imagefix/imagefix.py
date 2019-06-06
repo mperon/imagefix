@@ -12,7 +12,7 @@ from pathlib import Path
 import piexif
 from PIL import ExifTags, Image
 
-main_dir = "/home/marcos/Downloads/2004 Praia"
+main_dir = "D:\\Usuarios\\Peron\\Downloads\\COTE"
 ACCEPTABLE_EXTENSIONS = (".jpg", ".jpeg",)
 
 
@@ -58,12 +58,12 @@ class ImageProcessor():
     def process(self, img_obj):
         with Image.open(img_obj.file_obj) as img:
             img_obj.img = img
-            img_obj.exif_data = img._getexif()
+            img_obj.exif_data = piexif.load(img.info["exif"])
             # search dates
             self.date_finder.get_dates(img_obj)
             img_obj.choosen = self.date_chooser.choose(img_obj)
-            if img_obj.choosen:
-                self.date_saver.write(img_obj)
+            # if img_obj.choosen:
+            #     self.date_saver.write(img_obj)
 
 
 class ImageDateSaver():
@@ -113,6 +113,7 @@ class ImageDateSaver():
 
 class ImageDateChooser():
     CHOOSE_ORDER = [
+        "GPSDateTime",
         "DateTimeOriginal",
         "DateTime",
         "DateTimeDigitized",
@@ -132,6 +133,8 @@ class ImageDateChooser():
         valid_dates = {k: v for k, v in img_obj.dates.items()
                        if self.is_valid_date(v)}
 
+        print("File: {} -> Date: {}".format(img_obj.file_obj.name, valid_dates))
+
         # choose order
         choosen_date = None
         for name in ImageDateChooser.CHOOSE_ORDER:
@@ -143,14 +146,13 @@ class ImageDateChooser():
                 elif self.has_seconds(date):
                     choosen_date = date
                     break
-        print("File: {} -> Date: {}".format(img_obj.file_obj, choosen_date))
         return choosen_date
 
     def has_seconds(self, dt_val):
         return dt_val.hour > 0 or dt_val.minute > 0
 
     def is_valid_date(self, dt_val):
-        return dt_val > self.min_date and dt_val < self.max_date
+        return dt_val and dt_val > self.min_date and dt_val < self.max_date
 
 
 class ImageDateFinder():
@@ -175,37 +177,21 @@ class ImageDateFinder():
 
 
 class DateFromExifTag():
-    EXIF_TAGS = {
-        0x0132: "DateTime",
-        0x9003: "DateTimeOriginal",
-        0x9004: "DateTimeDigitized"
-    }
 
     def __init__(self):
         self.name = 'exif'
 
-    def get_dates(self, img_obj):
-        return self.read_exif_data(img_obj)
-
-    def str_to_date(self, adate):
-        adate = adate.replace("/", "-")
-        adate = adate.replace("\\", "-")
-        return adate
-
-    def read_exif_data(self, img_obj):
-        exif_data = img_obj.exif_data
-        if not exif_data:
-            return {}
-        date_exif = {}
-        for key in DateFromExifTag.EXIF_TAGS:
-            if key in exif_data:
-                tmp_date = self.convert_to_timestamp(exif_data[key])
-                if tmp_date:
-                    date_exif[DateFromExifTag.EXIF_TAGS[key]] = tmp_date
-        return date_exif
+    def read_exif_tag(self, exif_dict, etype, key, as_string=False):
+        if etype in exif_dict:
+            if key in exif_dict[etype]:
+                result = exif_dict[etype][key]
+                if as_string:
+                    return result.decode("utf-8")
+                return result
+        return None
 
     def convert_to_timestamp(self, exif_val):
-        if exif_val.strip(" \\/-"):
+        if exif_val and exif_val.strip(" \\/-"):
             exif_val = exif_val.replace('/', ':')
             exif_val = exif_val.replace('\\', ':')
             exif_val = exif_val.replace('-', ':')
@@ -217,6 +203,36 @@ class DateFromExifTag():
                 except ValueError:
                     pass
         return None
+
+    def get_dates(self, img_obj):
+        exif_dict = img_obj.exif_data
+        new_dict = {}
+        new_dict["DateTime"] = self.read_exif_tag(
+            exif_dict, "0th", piexif.ImageIFD.DateTime, as_string=True)
+        new_dict["DateTimeOriginal"] = self.read_exif_tag(
+            exif_dict, "0th", piexif.ExifIFD.DateTimeOriginal, as_string=True)
+        new_dict["DateTimeDigitized"] = self.read_exif_tag(
+            exif_dict, "0th", piexif.ExifIFD.DateTimeDigitized, as_string=True)
+        new_dict["GPSDateTime"] = self.get_gps_datetime(exif_dict)
+        return {k: self.convert_to_timestamp(v) for k, v in new_dict.items()}
+
+    def get_gps_datetime(self,exif_dict):
+        b_gpsdate = self.read_exif_tag(
+            exif_dict, "GPS", piexif.GPSIFD.GPSDateStamp)
+        t_gpstime = self.read_exif_tag(
+            exif_dict, "GPS", piexif.GPSIFD.GPSTimeStamp)
+        b_gpsdate = b_gpsdate.decode() if isinstance(b_gpsdate, bytes) else b_gpsdate
+        if isinstance(b_gpsdate, str):
+            # Change date colon to dash
+            gpsd = b_gpsdate.replace('-/\\', ':')
+            if isinstance(t_gpstime, tuple):
+                gpst = ':'.join(map('{0:0>2}'.format,  # Convert tuple to padded zero str
+                                    (t_gpstime[0][0], t_gpstime[1][0], t_gpstime[2][0])))
+            else:
+                gpst = '00:00:00'
+            return gpsd + ' ' + gpst
+        return None
+
 
 
 class DateFromFilePathFolder():

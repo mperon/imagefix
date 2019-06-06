@@ -12,8 +12,8 @@ from pathlib import Path
 import piexif
 from PIL import ExifTags, Image
 
-main_dir = "/home/marcos/Downloads/Fotos"
-new_dir = "/home/marcos/Downloads/Fotos_New"
+main_dir = "D:\\Usuarios\\Peron\\Downloads\\COTE"
+new_dir = "D:\\Usuarios\\Peron\\Downloads\\COTE_NEW"
 ACCEPTABLE_EXTENSIONS = (".jpg", ".jpeg",)
 
 
@@ -34,23 +34,24 @@ def walk(directory):
 def process_file(f):
     with Image.open(f) as img:
         exif_dict = piexif.load(img.info['exif'])
-        # new_dict = {}
-        # new_dict["DateTime"] = read_exif_tag(
-        #     exif_dict, "0th", piexif.ImageIFD.DateTime, as_string=True)
-        # new_dict["DateTimeOriginal"] = read_exif_tag(
-        #     exif_dict, "0th", piexif.ExifIFD.DateTimeOriginal, as_string=True)
-        # new_dict["DateTimeDigitized"] = read_exif_tag(
-        #     exif_dict, "0th", piexif.ExifIFD.DateTimeDigitized, as_string=True)
+        new_dict = {}
+        new_dict["DateTime"] = read_exif_tag(
+            exif_dict, "0th", piexif.ImageIFD.DateTime, as_string=True)
+        new_dict["DateTimeOriginal"] = read_exif_tag(
+            exif_dict, "0th", piexif.ExifIFD.DateTimeOriginal, as_string=True)
+        new_dict["DateTimeDigitized"] = read_exif_tag(
+            exif_dict, "0th", piexif.ExifIFD.DateTimeDigitized, as_string=True)
 
-        # new_dict["GPSDateTime"] = get_gps_datetime(exif_dict)
-        # set comment
-        set_exif_tag(exif_dict, "Exif", piexif.ExifIFD.UserComment,
-                     "testando".encode("utf-8"))
-        new_file = prepare_path(f, new_dir)
-        exif_bytes = piexif.dump(exif_dict)
-        print("File: {}".format(new_file))
-        img.save(new_file, "jpeg", exif=exif_bytes,
-                 quality="keep", optimize=True)
+        new_dict["GPSDateTime"] = get_gps_datetime(exif_dict)
+        print("{}: {}".format(f.name, new_dict))
+        # #set comment
+        # set_exif_tag(exif_dict, "Exif", piexif.ExifIFD.UserComment,
+        #              "testando".encode("utf-8"))
+        # new_file = prepare_path(f, new_dir)
+        # exif_bytes = piexif.dump(exif_dict)
+        # print("File: {}".format(new_file))
+        # img.save(new_file, "jpeg", exif=exif_bytes,
+        #          quality="keep", optimize=True)
 
 
 def get_gps_datetime(exif_dict):
