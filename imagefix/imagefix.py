@@ -82,14 +82,15 @@ class ImageProcessor():
             # search dates
             self.date_finder.get_dates(img_obj)
             img_obj.choosen = self.date_chooser.choose(img_obj)
-            # if img_obj.choosen:
-            #     self.date_saver.write(img_obj)
+            if img_obj.choosen:
+                self.date_saver.write(img_obj)
 
 
 class ImageDateSaver():
 
     def __init__(self, processor=None):
         super().__init__()
+        self.processor = processor
 
     def write(self, img_obj):
         pass
