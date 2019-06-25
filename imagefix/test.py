@@ -54,7 +54,7 @@ def process_file(f):
         #          quality="keep", optimize=True)
 
 
-def get_gps_datetime(exif_dict):
+def get_gps_datetime(self, exif_dict):
     b_gpsdate = read_exif_tag(exif_dict, "GPS", piexif.GPSIFD.GPSDateStamp)
     t_gpstime = read_exif_tag(exif_dict, "GPS", piexif.GPSIFD.GPSTimeStamp)
     b_gpsdate = b_gpsdate.decode() if isinstance(b_gpsdate, bytes) else b_gpsdate
@@ -70,7 +70,7 @@ def get_gps_datetime(exif_dict):
     return None
 
 
-def set_exif_tag(exif_dict, etype, key, value):
+def set_exif_tag(self, exif_dict, etype, key, value):
     if not etype in exif_dict:
         exif_dict[etype] = {}
     exif_dict[etype][key] = value
